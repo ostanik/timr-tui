@@ -1,4 +1,4 @@
-use rodio::{Decoder, DeviceSinkBuilder, MixerDeviceSink, Source, source::Buffered};
+use rodio::{Decoder, DeviceSinkBuilder, MixerDeviceSink, Player, Source, source::Buffered};
 use std::fs::File;
 use std::io::BufReader;
 use std::path::PathBuf;
@@ -37,7 +37,9 @@ pub fn validate_sound_file(path: &PathBuf) -> Result<&PathBuf, SoundError> {
 
 pub struct Sound {
     buffer: Arc<Buffered<Decoder<BufReader<File>>>>,
-    stream: MixerDeviceSink,
+    // Kept alive so the audio device stays open for the player's lifetime.
+    _stream: MixerDeviceSink,
+    player: Player,
 }
 
 impl Sound {
@@ -48,12 +50,24 @@ impl Sound {
         let file = File::open(&path).map_err(|e| SoundError::File(e.to_string()))?;
         let decoder = Decoder::try_from(file).map_err(|e| SoundError::Decoder(e.to_string()))?;
         let buffer = Arc::new(decoder.buffered());
+        let player = Player::connect_new(stream.mixer());
 
-        Ok(Self { buffer, stream })
+        Ok(Self {
+            buffer,
+            _stream: stream,
+            player,
+        })
     }
 
+    /// Plays the sound in a loop until `stop` is called.
     pub fn play(&self) -> Result<(), SoundError> {
-        self.stream.mixer().add((*self.buffer).clone());
+        self.player.stop();
+        self.player.append((*self.buffer).clone().repeat_infinite());
+        self.player.play();
         Ok(())
+    }
+
+    pub fn stop(&self) {
+        self.player.stop();
     }
 }

@@ -87,7 +87,7 @@ pub struct Args {
     #[arg(
         long,
         value_enum,
-        help = "Path to sound file (.mp3 or .wav) to play as notification. Experimental.",
+        help = "Path to sound file (.mp3 or .wav) to play in a loop when a clock finishes, until it is reset or restarted. Experimental.",
         value_hint = clap::ValueHint::FilePath,
         value_parser = sound_file_parser,
     )]
