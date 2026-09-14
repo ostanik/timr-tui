@@ -435,6 +435,13 @@ impl App {
                         }
                     }
                 }
+                events::AppEvent::ClockRestarted => {
+                    debug!("AppEvent::ClockRestarted");
+                    #[cfg(feature = "sound")]
+                    if let Some(sound) = &app.sound {
+                        sound.stop();
+                    }
+                }
                 events::AppEvent::SetCursor(position) => {
                     app.cursor_position = position;
                     // Trigger re-draw by setting cursor smoothly

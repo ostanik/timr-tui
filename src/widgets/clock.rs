@@ -232,7 +232,14 @@ impl<T> ClockState<T> {
     }
 
     pub fn run(&mut self) {
-        self.mode = Mode::Tick
+        self.mode = Mode::Tick;
+        self.notify_restarted();
+    }
+
+    fn notify_restarted(&self) {
+        if let Some(tx) = &self.app_tx {
+            _ = tx.send(AppEvent::ClockRestarted);
+        }
     }
 
     pub fn is_running(&self) -> bool {
@@ -244,6 +251,9 @@ impl<T> ClockState<T> {
             Mode::Pause
         } else {
             Mode::Tick
+        };
+        if self.mode == Mode::Tick {
+            self.notify_restarted();
         }
     }
 
@@ -433,6 +443,7 @@ impl<T> ClockState<T> {
         self.current_value = self.initial_value;
         self.done_count = None;
         self.update_format();
+        self.notify_restarted();
     }
 
     pub fn is_done(&self) -> bool {
@@ -1687,5 +1698,47 @@ where
             widths,
         };
         render_clock(area, buf, render_state);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use tokio::sync::mpsc;
+
+    fn countdown(tx: AppEventTx) -> ClockState<Countdown> {
+        ClockState::<Countdown>::new(ClockStateArgs {
+            initial_value: Duration::from_secs(5),
+            current_value: Duration::from_secs(5),
+            tick_value: Duration::from_secs(1),
+            with_decis: false,
+            app_tx: Some(tx),
+        })
+    }
+
+    #[test]
+    fn reset_sends_clock_restarted() {
+        let (tx, mut rx) = mpsc::unbounded_channel();
+        let mut clock = countdown(tx);
+        clock.reset();
+        assert!(matches!(rx.try_recv(), Ok(AppEvent::ClockRestarted)));
+    }
+
+    #[test]
+    fn run_sends_clock_restarted() {
+        let (tx, mut rx) = mpsc::unbounded_channel();
+        let mut clock = countdown(tx);
+        clock.run();
+        assert!(matches!(rx.try_recv(), Ok(AppEvent::ClockRestarted)));
+    }
+
+    #[test]
+    fn toggle_pause_sends_clock_restarted_only_when_starting() {
+        let (tx, mut rx) = mpsc::unbounded_channel();
+        let mut clock = countdown(tx);
+        clock.toggle_pause(); // Initial -> Tick
+        assert!(matches!(rx.try_recv(), Ok(AppEvent::ClockRestarted)));
+        clock.toggle_pause(); // Tick -> Pause
+        assert!(rx.try_recv().is_err());
     }
 }

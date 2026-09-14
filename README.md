@@ -121,7 +121,7 @@ Options:
 Extra option (if `--features sound` is enabled by local build only):
 
 ```sh
---sound <SOUND>                Path to sound file (.mp3 or .wav) to play as notification. Experimental.
+--sound <SOUND>                Path to sound file (.mp3 or .wav) to play in a loop when a clock finishes, until it is reset or restarted. Experimental.
 ```
 
 # Keybindings

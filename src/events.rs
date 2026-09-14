@@ -25,6 +25,8 @@ pub enum TuiEvent {
 #[derive(Clone, Debug)]
 pub enum AppEvent {
     ClockDone(ClockTypeId, ClockName, Option<ClockDescription>),
+    /// A clock was started or reset. Used to silence a finished clock's sound.
+    ClockRestarted,
     SetCursor(Option<Position>),
 }
 
