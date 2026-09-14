@@ -121,8 +121,10 @@ Options:
 Extra option (if `--features sound` is enabled by local build only):
 
 ```sh
---sound <SOUND>                Path to sound file (.mp3 or .wav) to play in a loop when a clock finishes, until it is reset or restarted. Experimental.
+--sound <on|off|PATH>          Enable/disable the sound played in a loop when a clock finishes, until it is reset or restarted. Pass a path to an .mp3 or .wav file to use it instead of the built-in chime for this run. Experimental.
 ```
+
+A built-in chime is enabled by default. `--sound on|off` is stored as part of settings, so running it once is enough. A custom `PATH` applies to the current run only.
 
 # Keybindings
 
