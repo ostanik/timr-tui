@@ -24,7 +24,7 @@ use crossterm::event::Event as CrosstermEvent;
 use time::OffsetDateTime;
 
 #[cfg(feature = "sound")]
-use crate::sound::Sound;
+use crate::sound::{Sound, SoundArg};
 #[cfg(feature = "sound")]
 use std::path::PathBuf;
 
@@ -50,6 +50,7 @@ pub struct App {
     mode: Mode,
     notification: Toggle,
     blink: Toggle,
+    sound_toggle: Toggle,
     #[cfg(feature = "sound")]
     sound: Option<Sound>,
     app_time: AppTime,
@@ -89,6 +90,7 @@ pub struct AppArgs {
     pub current_value_timer: Duration,
     pub event: Event,
     pub app_tx: events::AppEventTx,
+    pub sound_toggle: Toggle,
     #[cfg(feature = "sound")]
     pub sound_path: Option<PathBuf>,
     pub footer_toggle_app_time: Toggle,
@@ -120,6 +122,15 @@ impl From<FromAppArgs> for App {
         } else {
             stg.current_value_pause
         };
+
+        #[cfg(feature = "sound")]
+        let (sound_toggle, sound_path) = match args.sound {
+            Some(SoundArg::Toggle(toggle)) => (toggle, None),
+            Some(SoundArg::Path(path)) => (Toggle::On, Some(path)),
+            None => (stg.sound, None),
+        };
+        #[cfg(not(feature = "sound"))]
+        let sound_toggle = stg.sound;
 
         App::new(AppArgs {
             with_decis: args.decis || stg.with_decis,
@@ -170,8 +181,9 @@ impl From<FromAppArgs> for App {
             current_value_timer: stg.current_value_timer,
             event: args.event.unwrap_or(stg.event),
             app_tx,
+            sound_toggle,
             #[cfg(feature = "sound")]
-            sound_path: args.sound,
+            sound_path,
             footer_toggle_app_time: stg.footer_app_time,
         })
     }
@@ -203,18 +215,25 @@ impl App {
             blink,
             app_tx,
             footer_toggle_app_time,
+            sound_toggle,
             #[cfg(feature = "sound")]
             sound_path,
         } = args;
         let app_time = AppTime::new();
 
         #[cfg(feature = "sound")]
-        let sound = sound_path.and_then(|path| Sound::new(path).ok());
+        let sound = match sound_toggle {
+            Toggle::On => Sound::new(sound_path)
+                .inspect_err(|err| error!("Sound disabled: {err}"))
+                .ok(),
+            Toggle::Off => None,
+        };
 
         Self {
             mode: Mode::Running,
             notification,
             blink,
+            sound_toggle,
             #[cfg(feature = "sound")]
             sound,
             content,
@@ -552,6 +571,7 @@ impl App {
             vim: self.vim_motions.into(),
             notification: self.notification,
             blink: self.blink,
+            sound: self.sound_toggle,
             app_time_format: self.app_time_format,
             style: self.style,
             with_decis: self.with_decis,

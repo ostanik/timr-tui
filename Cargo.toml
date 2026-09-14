@@ -15,7 +15,7 @@ exclude = [
     ".github/*",
     "demo/*.tape",
     "result/*",
-    "*.mp3",
+    "demo/*.mp3",
     "src/**/*test*",
     "src/**/snapshots/*",
     ".agents",

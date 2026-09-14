@@ -1,11 +1,11 @@
+#[cfg(feature = "sound")]
+use crate::sound::{SoundArg, parse_sound_arg};
 use crate::{
     common::{Content, Style, Toggle},
     duration,
     event::{Event, parse_event},
     widgets::pomodoro::PauseDuration,
 };
-#[cfg(feature = "sound")]
-use crate::{sound, sound::SoundError};
 use clap::Parser;
 use std::path::PathBuf;
 use std::time::Duration;
@@ -86,12 +86,11 @@ pub struct Args {
     #[cfg(feature = "sound")]
     #[arg(
         long,
-        value_enum,
-        help = "Path to sound file (.mp3 or .wav) to play in a loop when a clock finishes, until it is reset or restarted. Experimental.",
-        value_hint = clap::ValueHint::FilePath,
-        value_parser = sound_file_parser,
+        value_name = "on|off|PATH",
+        help = "Enable/disable the sound played in a loop when a clock finishes, until it is reset or restarted. Pass a path to an .mp3 or .wav file to use it instead of the built-in chime for this run. Experimental.",
+        value_parser = parse_sound_arg,
     )]
-    pub sound: Option<PathBuf>,
+    pub sound: Option<SoundArg>,
 
     #[arg(
         long,
@@ -172,12 +171,4 @@ mod tests {
     fn pause_parser_invalid() {
         assert!(pause_duration_parser("invalid-duration").is_err());
     }
-}
-
-#[cfg(feature = "sound")]
-/// Custom parser for sound file
-fn sound_file_parser(s: &str) -> Result<PathBuf, SoundError> {
-    let path = PathBuf::from(s);
-    sound::validate_sound_file(&path)?;
-    Ok(path)
 }

@@ -19,6 +19,10 @@ fn default_pause_duration() -> PauseDuration {
     DEFAULT_PAUSE_DURATION
 }
 
+fn default_sound() -> Toggle {
+    Toggle::On
+}
+
 fn deserialize_app_time_format<'de, D>(deserializer: D) -> Result<AppTimeFormat, D::Error>
 where
     D: Deserializer<'de>,
@@ -39,6 +43,8 @@ pub struct AppStorage {
     pub vim: Toggle,
     pub notification: Toggle,
     pub blink: Toggle,
+    #[serde(default = "default_sound")]
+    pub sound: Toggle,
     #[serde(deserialize_with = "deserialize_app_time_format")]
     pub app_time_format: AppTimeFormat,
     pub style: Style,
@@ -75,6 +81,7 @@ impl Default for AppStorage {
             vim: Toggle::Off,
             notification: Toggle::Off,
             blink: Toggle::Off,
+            sound: Toggle::On,
             app_time_format: AppTimeFormat::default(),
             style: Style::default(),
             with_decis: false,
